@@ -4,6 +4,15 @@ package sys.tem.model;
 public class Post {
     private long id;
     private String content;
+    private boolean removed = false;
+
+    public void setRemoved(boolean removed) {
+        this.removed = removed;
+    }
+
+    public boolean isRemoved() {
+        return removed;
+    }
 
     public Post() {
     }

@@ -2,6 +2,7 @@ package sys.tem.repository;
 
 
 import org.springframework.stereotype.Repository;
+import sys.tem.exception.NotFoundException;
 import sys.tem.model.Post;
 
 import java.util.List;
@@ -9,6 +10,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 @Repository
 public class PostRepository {
@@ -21,22 +23,37 @@ public class PostRepository {
     }
 
     public List<Post> all() {
-        return List.copyOf(posts.values());
+        return posts.values().stream()
+                .filter(w -> !w.isRemoved())
+                .collect(Collectors.toList());
     }
 
     public Optional<Post> getById(long id) {
-        return Optional.ofNullable(posts.get(id));
+        var post = posts.get(id);
+        if (post == null || post.isRemoved()) {
+            throw new NotFoundException();
+        }
+        return Optional.ofNullable(post);
     }
 
     public Post save(Post post) {
+        if (posts.get(post.getId()) != null) {
+            if (posts.get(post.getId()).isRemoved()) {
+                throw new NotFoundException();
+            }
+        }
         if (post.getId() == 0) {
             post.setId(counter.incrementAndGet());
+
         }
         posts.put(post.getId(), post);
         return post;
     }
 
     public void removeById(long id) {
-        posts.remove(id);
+        var post = posts.get(id);
+        if (post != null) {
+            post.setRemoved(true);
+        }
     }
 }
